@@ -1,0 +1,38 @@
+name: Post merge
+
+env:
+  UV_MALWARE_CHECK: "1"
+  UV_PREVIEW_FEATURES: "malware-check"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Full main commit SHA to retry (defaults to this workflow commit)
+        required: false
+        type: string
+  push:
+    branches: [main]
+
+concurrency:
+  group: post-merge-main
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  warm-dependency-cache:
+    name: Warm dependency cache (${{ matrix.runner }})
+    if: github.ref == 'refs/heads/main'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: Linux
+            runner: ubuntu-latest
+          - os: Windows
+            runner: windows-latest
+          - os: macOS
